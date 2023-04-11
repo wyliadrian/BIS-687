@@ -1,0 +1,37 @@
+{
+  "articles": [
+    {
+      "path": "accelerometry.html",
+      "title": "Accelerometry",
+      "description": "Analysis of accelerometry summary data",
+      "author": [],
+      "contents": "\n\n\n\nPreprocess\nThe original accelerometry data shows the cumulative probabilities for acceleration of 1, 2, 3 milligravities, etc.\nThis preprocess transformed them into probability mass on each acceleration value.\n\n\n\n\n\n\n\n\n\nProbability Mass Table (for the first 500 participants)\n\n\n\n\nAccelerometry visualization (for the first 200 participants)\n\n\n\n\nInterpretation\nIn the visualization, the probability mass functions follow a “3-peak” pattern.\nIt has been validated for all users with compliance.\n3 peaks appear at 1, 20 and 200 milligravities.\nActivity amount\nBased on the acceleration cutoffs, the total probability within each range can measure the amount of different activities.\n1 - 19 milligravities: LOW intensity activity\n20 - 95 milligravities: MIDDLE intensity activity\n100 - 1900 milligravities: HIGH intensity activity\nActivity Amount Table\n\n\n\n\nBivariate\nAccelerometry ~ Activity\nCategorical activity variables\n\n [1] \"number_of_daysweek_walked_10_minutes_f864_0_0\"                       \n [2] \"number_of_daysweek_of_moderate_physical_activity_10_minutes_f884_0_0\"\n [3] \"number_of_daysweek_of_vigorous_physical_activity_10_minutes_f904_0_0\"\n [4] \"frequency_of_walking_for_pleasure_in_last_4_weeks_f971_0_0\"          \n [5] \"frequency_of_strenuous_sports_in_last_4_weeks_f991_0_0\"              \n [6] \"frequency_of_light_diy_in_last_4_weeks_f1011_0_0\"                    \n [7] \"frequency_of_heavy_diy_in_last_4_weeks_f2624_0_0\"                    \n [8] \"frequency_of_other_exercises_in_last_4_weeks_f3637_0_0\"              \n [9] \"types_of_physical_activity_in_last_4_weeks_f6164_0_0\"                \n[10] \"types_of_physical_activity_in_last_4_weeks_f6164_0_1\"                \n[11] \"types_of_physical_activity_in_last_4_weeks_f6164_0_2\"                \n[12] \"types_of_physical_activity_in_last_4_weeks_f6164_0_3\"                \n[13] \"types_of_physical_activity_in_last_4_weeks_f6164_0_4\"                \n[14] \"ipaq_activity_group_f22032_0_0\"                                      \n[15] \"above_moderatevigorous_recommendation_f22035_0_0\"                    \n[16] \"above_moderatevigorouswalking_recommendation_f22036_0_0\"             \n[17] \"invitation_to_physical_activity_study_acceptance_f110005_0_0\"        \n\nActivity amount vs. activity’s categories\n\n\n\n\n\n\n\nAccelerometry ~ Sleep\nVariables related to sleep conditions\n\n [1] \"sleep_duration_f1160_0_0\"                                           \n [2] \"getting_up_in_morning_f1170_0_0\"                                    \n [3] \"morningevening_person_chronotype_f1180_0_0\"                         \n [4] \"nap_during_day_f1190_0_0\"                                           \n [5] \"sleeplessness_insomnia_f1200_0_0\"                                   \n [6] \"snoring_f1210_0_0\"                                                  \n [7] \"daytime_dozing_sleeping_narcolepsy_f1220_0_0\"                       \n [8] \"trouble_falling_or_staying_asleep_or_sleeping_too_much_f20517_0_0\"  \n [9] \"did_your_sleep_change_f20532_0_0\"                                   \n[10] \"trouble_falling_asleep_f20533_0_0\"                                  \n[11] \"sleeping_too_much_f20534_0_0\"                                       \n[12] \"waking_too_early_f20535_0_0\"                                        \n[13] \"degree_bothered_by_trouble_sleeping_in_the_last_3_months_f21061_0_0\"\n[14] \"overall_health_rating_f2178_0_0\"                                    \n[15] \"neuroticism_score_f20127_0_0\"                                       \n\nActivity amount vs. sleep conditions\n\n\n\n\nStatistical Analysis\n\n\n\nAccording to Central Limit Theorem, mean of users’ activity amount with medical condition (‘best’ or ‘worst’) approximates a normal distribution.\nThus the mean of activity amount difference between ‘best’ and ‘worst’ should also has a normal distribution.\np-value = minimal { p-value(mean difference > 0), p-value(mean difference < 0) }\nIf p-value << 0.5, the activity amount difference between ‘best’ and ‘worst’ is significant.\n\n\n\n\n\n\n\n",
+      "last_modified": "2023-04-10T20:09:01-04:00"
+    },
+    {
+      "path": "data_showcase.html",
+      "title": "Data Showcase",
+      "description": "An overview of the UKBiobank dataset",
+      "author": [],
+      "contents": "\n\n\n\nVariable Table\n\n\n\nData Dictionary\n\n\n\n\n\n\n",
+      "last_modified": "2023-04-10T20:09:01-04:00"
+    },
+    {
+      "path": "index.html",
+      "title": "UKBiobank Daily Activity",
+      "description": "Explore the relationship between Sleep Conditions and Daily Activity based on UKBiobank Dataset\n",
+      "author": [],
+      "contents": "\n\n\n\n",
+      "last_modified": "2023-04-10T20:09:02-04:00"
+    },
+    {
+      "path": "missingness.html",
+      "title": "Missingness",
+      "description": "Missingness for all the variables",
+      "author": [],
+      "contents": "\n\n\n\n\n\n\nNA count and percentage by field\n\n\n\n\n\n\n\nNA count by category\n\n\n\nNA percentage by category\n\n\n\nBaseline NA count by category\n\n\n\nBaseline NA percentage by category\n\n\n\n\n\n\n",
+      "last_modified": "2023-04-10T20:09:10-04:00"
+    }
+  ],
+  "collections": []
+}

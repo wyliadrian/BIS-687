@@ -1,0 +1,26 @@
+---
+title: "Data Showcase"
+description: |
+  An overview of the UKBiobank dataset
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(DT)
+```
+
+## Variable Table
+```{r}
+vt <- read.csv("data/variable_table.csv")
+datatable(vt, options = list(scrollX = TRUE))
+```
+
+## Data Dictionary
+```{r}
+dd <- read.csv("data/data_dictionary_showcase_relevant.csv")
+datatable(dd, options = list(scrollX = TRUE))
+```
+

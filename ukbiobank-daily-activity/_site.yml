@@ -1,0 +1,16 @@
+name: "ukbiobank-daily-activity"
+title: "BIS687 Capstone Team 4"
+description: |
+  BIS687 Capstone Team 4
+output_dir: "_site"
+navbar:
+  right:
+    - text: "Home"
+      href: index.html
+    - text: "Dataset"
+      href: data_showcase.html
+    - text: "Missingness"
+      href: missingness.html
+    - text: "Accelerometry"
+      href: accelerometry.html
+output: distill::distill_article

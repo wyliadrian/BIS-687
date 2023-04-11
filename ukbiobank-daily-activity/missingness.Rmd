@@ -1,0 +1,98 @@
+---
+title: "Missingness"
+description: |
+  Missingness for all the variables
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(tibble)
+library(ggplot2)
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(scales)
+library(ggpubr)
+theme_set(theme_pubr())
+library(trelliscopejs)
+```
+
+```{r}
+activity <- tibble(readRDS("data/ukbiobank.rds"))
+mt <- read.csv("data/variable_table.csv")
+
+mt$na_count <- colSums(is.na(activity))
+mt[1,3:6] <- c("eid", "NA", "NA", "NA")
+obs <- nrow(activity)
+mt$na_percent <- percent(mt$na_count/obs, accuracy = 0.1)
+```
+
+# NA count and percentage by field
+```{r}
+create_trel_missing <- FALSE
+if (create_trel_missing) {
+  ggplot(mt, aes(x = suffix, y = na_percent)) +
+    geom_bar(stat = "identity", fill = "steelblue", width = 0.5) + 
+    xlab("variable") +
+    geom_text(aes(label = na_count), vjust=-0.3, size=3.5) +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+    facet_trelliscope(~ field, nrow = 1, ncol = 1, scales = c("free", "free"), width = 500, path = "assets/missing-trelliscope")
+}
+knitr::include_app("assets/missing-trelliscope/index.html")
+```
+
+```{r}
+tab1 <- aggregate(na_count ~ category, mt, sum)
+tab2 <- aggregate(na_count/obs ~ category, mt, mean) %>% rename(na_percent = `na_count/obs`)
+tab3 <- aggregate(na_count ~ category, mt[mt$instance == 0,], sum) %>% rename(na_count_baseline = na_count)
+tab4 <- aggregate(na_count/obs ~ category, mt[mt$instance == 0,], mean) %>% rename(na_percent_baseline = `na_count/obs`)
+
+missing_by_category <- list(tab1, tab2, tab3, tab4) %>% reduce(full_join, by = 'category')
+```
+
+# NA count by category
+```{r}
+p1 <- ggplot(missing_by_category, aes(x=category, y=na_count)) + 
+      geom_bar(stat= "identity", fill = "steelblue", position=position_dodge()) + 
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8)) +
+      geom_text(aes(label = na_count), vjust=-0.3, size=2.5) +
+      theme(plot.title = element_text(hjust = 0.5))
+p1
+```
+
+# NA percentage by category
+```{r}
+p2 <- ggplot(missing_by_category, aes(x=category, y=na_percent)) + 
+      geom_bar(stat= "identity", fill = "steelblue", position=position_dodge()) + 
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8)) +
+      geom_text(aes(label = percent(na_percent, accuracy = 0.1)), vjust=-0.3, size=3.5) +
+      theme(plot.title = element_text(hjust = 0.5))
+p2
+```
+
+# Baseline NA count by category
+```{r}
+p3 <- ggplot(missing_by_category, aes(x=category, y=na_count_baseline)) + 
+      geom_bar(stat= "identity", fill = "steelblue", position=position_dodge()) + 
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8)) +
+      geom_text(aes(label = na_count_baseline), vjust=-0.3, size=2.5) +
+      theme(plot.title = element_text(hjust = 0.5))
+p3
+```
+
+# Baseline NA percentage by category
+```{r}
+p4 <- ggplot(missing_by_category, aes(x=category, y=na_percent_baseline)) + 
+      geom_bar(stat= "identity", fill = "steelblue", position=position_dodge()) + 
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 8)) +
+      geom_text(aes(label = percent(na_percent_baseline, accuracy = 0.1)), vjust=-0.3, size=3.5) +
+      theme(plot.title = element_text(hjust = 0.5))
+p4
+```
+
+
+
+

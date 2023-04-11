@@ -1,0 +1,356 @@
+---
+title: "Accelerometry"
+description: |
+  Analysis of accelerometry summary data
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(rmarkdown)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+library(purrr)
+library(trelliscopejs)
+library(stringr)
+library(RColorBrewer)
+library(colorRamps)
+library(ggpubr)
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Preprocess  
+
+The original accelerometry data shows the cumulative probabilities for acceleration of 1, 2, 3 milligravities, etc.   
+This preprocess transformed them into probability mass on each acceleration value.  
+
+```{r}
+# Select users with compliance and generate accelerometry distribution
+
+x <- readRDS("data/ukbiobank.rds")
+mt <- read.csv("data/variable_table.csv")
+
+# accelerometry variables
+accel_vars <- names(x)[grep("fraction_acceleration", names(x), ignore.case = TRUE)]
+
+# variables determining compliance
+compliance_vars <- c("data_quality_good_wear_time_f90015_0_0", "data_quality_good_calibration_f90016_0_0", "data_quality_calibrated_on_own_data_f90017_0_0")
+
+# We have a bunch of NAs.
+xa <- x[,c("eid", accel_vars, compliance_vars)] |> na.omit() %>%
+  filter(data_quality_good_wear_time_f90015_0_0 == "Yes", data_quality_good_calibration_f90016_0_0 == "Yes",
+         data_quality_calibrated_on_own_data_f90017_0_0 == "Yes")
+
+x_compliant <- x[x$eid %in% xa$eid, ]
+
+ma <- as.matrix(select(xa, -eid, -compliance_vars))
+
+for (j in seq_len(ncol(ma))[-1]) {
+  ma[,j-1] <- ma[,j] - ma[,j-1]
+}
+ma <- ma[, -ncol(ma)]
+
+accel_val <- map_dbl(accel_vars, ~ as.numeric(unlist(strsplit(.x, "_"))[3]))
+accel_val <- accel_val[-length(accel_val)]
+
+colnames(ma) <- factor(accel_val)
+# ma is the matrix calculating percents of each accelerometry variable
+```
+
+```{r}
+# Find max accelerometry value for each eid
+tol = 1e-5
+max_accel <- replicate(nrow(ma), 0)
+
+for (i in seq_len(nrow(ma))) {
+  j <- ncol(ma)
+  stop <- FALSE
+  while (!stop & j >= 1) {
+    if (ma[i, j] > tol) {
+      max_accel[i] <- accel_val[j]
+      stop <- TRUE
+    }
+    j <- j-1
+  }
+}
+
+# Find the number of modes in accelerometry distribution for each eid
+# mode definition: the columns whose percentage is greater than its left column by threshhold = 0.005
+find_mode <- function(x, thr = 0.005) {
+  x <- c(0, x)
+  res <- 0
+  for (j in seq_len(length(x))[-1]) {
+    if (x[j]-x[j-1] > thr) {
+      res <- res + 1
+    }
+  }
+  return (res)
+} 
+
+num_modes <- apply(ma, 1, find_mode)
+
+# cutoffs: c(1, 20, 100)
+# low_activity <- [1, 19], mid_activity <- [20, 95], high_activity <- [100, 1900]
+```
+
+```{r}
+ma <- data.frame(ma)
+ma <- ma %>% mutate(total_activity = rowSums(ma)) %>%
+   mutate(low_activity = select(., X1:X19) %>% rowSums()) %>%
+   mutate(mid_activity = select(., X20:X95) %>% rowSums()) %>%
+   mutate(high_activity = select(., X100:X1900) %>% rowSums())
+ma <- cbind(eid = factor(x_compliant$eid), ma)
+```
+
+### Probability Mass Table (for the first 500 participants)
+
+```{r, layout="l-body-outset"}
+tb1 <- ma[1:500, ] %>% select(eid:X1900)
+paged_table(tb1)
+```
+
+# Accelerometry visualization (for the first 200 participants)
+
+```{r}
+create_trel_accel <- FALSE
+if (create_trel_accel) {
+accel_plt <- function(id) {
+  accel_perc = as.numeric(ma[which(ma$eid == id), 
+                             !(colnames(ma) %in% c("eid", "total_activity", "low_activity", "mid_activity", "high_activity"))])
+  tibble(accel = factor(accel_val), accel_perc) |>
+  ggplot(aes(x = accel, y = accel_perc)) +
+  theme(axis.text.x = element_text(angle = 90, size = 5), text = element_text(size = 5)) +
+  geom_col()
+}
+
+df <- tibble(eid = factor(ma$eid)[1:200], max_accel = factor(max_accel)[1:200], 
+             num_modes = factor(num_modes)[1:200], plot = map_plot(eid, accel_plt))
+
+df |> trelliscope(name = "Accelerometry Visualization", nrow = 1, ncol = 1, 
+                   path = "assets/accelerometry-trelliscope")
+} |> print()
+knitr::include_app("assets/accelerometry-trelliscope/index.html")
+```
+
+### Interpretation
+
+In the visualization, the probability mass functions follow a "3-peak" pattern.  
+It has been validated for all users with compliance.  
+3 peaks appear at 1, 20 and 200 milligravities.  
+
+# Activity amount
+
+Based on the acceleration cutoffs, the total probability within each range can measure the amount of different activities.  
+1 - 19 milligravities: LOW intensity activity   
+20 - 95 milligravities: MIDDLE intensity activity  
+100 - 1900 milligravities: HIGH intensity activity
+
+### Activity Amount Table
+
+```{r, layout="l-body-outset"}
+tb2 <- ma[1:500, ] %>% select(eid, total_activity:high_activity)
+paged_table(tb2)
+```
+# Bivariate
+## Accelerometry ~ Activity
+### Categorical activity variables
+
+```{r}
+activity_baseline <- mt[mt$category == "Physical Activity" & mt$instance == 0, c(1,2,4)]
+cat_act <- activity_baseline[activity_baseline$fieldid %in% 
+           c(864, 884, 904, 843, 971, 991, 1011, 2624, 3637, 6164, 22032, 22035, 22036, 110005) ,1]
+
+cat_act
+```
+
+### Activity amount vs. activity's categories
+```{r}
+reorder_levels <- c("Once in the last 4 weeks", "2-3 times in the last 4 weeks", 
+                    "Once a week", "2-3 times a week", "4-5 times a week",
+                    "Every day", "Do not know", "Prefer not to answer")
+
+x_compliant$frequency_of_heavy_diy_in_last_4_weeks_f2624_0_0 <- 
+  x_compliant$frequency_of_heavy_diy_in_last_4_weeks_f2624_0_0 %>% 
+  factor(levels = reorder_levels)
+
+x_compliant$frequency_of_light_diy_in_last_4_weeks_f1011_0_0 <-
+  x_compliant$frequency_of_light_diy_in_last_4_weeks_f1011_0_0 %>%
+  factor(levels = reorder_levels)
+
+x_compliant$frequency_of_other_exercises_in_last_4_weeks_f3637_0_0 <-
+  x_compliant$frequency_of_other_exercises_in_last_4_weeks_f3637_0_0 %>%
+  factor(levels = reorder_levels)
+
+x_compliant$frequency_of_strenuous_sports_in_last_4_weeks_f991_0_0 <-
+  x_compliant$frequency_of_strenuous_sports_in_last_4_weeks_f991_0_0 %>%
+  factor(levels = reorder_levels)
+
+x_compliant$frequency_of_walking_for_pleasure_in_last_4_weeks_f971_0_0 <-
+  x_compliant$frequency_of_walking_for_pleasure_in_last_4_weeks_f971_0_0 %>%
+  factor(levels = reorder_levels)
+
+```
+
+```{r}
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+create_act_cat_amount_trel <- FALSE
+if (create_act_cat_amount_trel) {
+act_amount_plot <- function(act) {
+  plot_func <- function(act_amount) {
+    df <- data.frame(ma[[act_amount]], factor(x_compliant[[act]])) %>% 
+          na.omit %>% tibble
+    colnames(df) <- c("act_amount", "activity")
+    colourCount <- length(unique(df$activity))
+    
+    ggplot(df, aes(color=activity, y=act_amount, x=activity)) +
+    geom_boxplot() + 
+    xlab(act_amount) +
+    scale_fill_manual(values = getPalette(colourCount)) + 
+    theme(legend.position = "none", axis.ticks.x=element_blank(),
+          axis.text.x=element_blank())
+  }
+  p1 <- plot_func("total_activity") +
+       theme(legend.title = element_blank(), legend.text=element_text(size=5), 
+             legend.key.size = unit(0.8, "cm"), legend.position = "top", 
+             legend.box = "horizontal", legend.box.just = "center")
+  p2 <- plot_func("low_activity")
+  p3 <- plot_func("mid_activity")
+  p4 <- plot_func("high_activity")
+  p <- ggarrange(p1, p2, p3, p4, nrow = 2, ncol = 2, common.legend = TRUE, legend="bottom")
+}
+
+act_amount = tibble(var = cat_act, data_plot = map_plot(var, act_amount_plot))
+act_amount %>% trelliscope(name = "Activity categories vs activity amount", nrow = 1, ncol = 1, 
+                           path = "assets/act_cat_amount-trelliscope")
+}
+knitr::include_app("assets/act_cat_amount-trelliscope/index.html")
+```
+
+## Accelerometry ~ Sleep
+### Variables related to sleep conditions
+
+```{r}
+med <- mt[[1]][mt$category == "Sleep" & mt$instance == 0] |>
+  c(mt[[1]][mt$variable == "overall_health_rating_f2178_0_0"]) |>
+  c(mt[[1]][mt$variable == "neuroticism_score_f20127_0_0"])
+med
+```
+
+### Activity amount vs. sleep conditions
+
+```{r}
+create_med_act_trel <- FALSE
+if (create_med_act_trel) {
+med_act_plot <- function(med_var) {
+  plot_func <- function(activity) {
+    df <- data.frame(ma[[activity]], factor(x_compliant[[med_var]])) %>% 
+          na.omit %>% tibble
+    colnames(df) <- c("act_amount", "med_group")
+    colourCount <- length(unique(df$med_group))
+    
+    ggplot(df, aes(color=med_group, y=act_amount, x=med_group)) +
+    geom_boxplot() + 
+    xlab(activity) +
+    scale_fill_manual(values = getPalette(colourCount)) + 
+    theme(legend.position = "none", axis.ticks.x=element_blank(),
+          axis.text.x=element_blank())
+  }
+  p1 <- plot_func("total_activity") +
+        theme(legend.title = element_blank(), legend.text=element_text(size=5), 
+             legend.key.size = unit(0.8, "cm"), legend.position = "top", 
+             legend.box = "horizontal", legend.box.just = "center")
+  p2 <- plot_func("low_activity")
+  p3 <- plot_func("mid_activity")
+  p4 <- plot_func("high_activity")
+  p <- ggarrange(p1, p2, p3, p4, nrow = 2, ncol = 2, common.legend = TRUE, legend="bottom")
+}
+
+med_act = tibble(var = med, data_plot = map_plot(var, med_act_plot))
+med_act %>% trelliscope(name = "activity amount vs sleep conditions", nrow = 1, ncol = 1,
+                        path = "assets/sleep_act-trelliscope")
+}
+knitr::include_app("assets/sleep_act-trelliscope/index.html")
+```
+
+### Statistical Analysis  
+
+```{r}
+activity <- rep(c("high_activity", "mid_activity", "low_activity"), 15)
+med_var <- rep(c("daytime_dozing_sleeping_narcolepsy_f1220_0_0", "degree_bothered_by_trouble_sleeping_in_the_last_3_months_f21061_0_0", "did_your_sleep_change_f20532_0_0", "getting_up_in_morning_f1170_0_0", "morningevening_person_chronotype_f1180_0_0", "nap_during_day_f1190_0_0", "neuroticism_score_f20127_0_0", "overall_health_rating_f2178_0_0", "sleep_duration_f1160_0_0", "sleeping_too_much_f20534_0_0", "sleeplessness_insomnia_f1200_0_0", "snoring_f1210_0_0", "trouble_falling_asleep_f20533_0_0", "trouble_falling_or_staying_asleep_or_sleeping_too_much_f20517_0_0", "waking_too_early_f20535_0_0"), each=3)
+
+best <- c("Never/rarely", "Not bothered at all", "No", "Very easy", "Definitely a 'morning' person", "Never/rarely", 0, "Excellent", 18, "No", "Never/rarely", "No", "No", "Not at all", "No")
+best <- rep(best, each = 3)
+
+worst <- c("All of the time", "Bothered a lot", "Yes", "Not at all easy", "Definitely an 'evening' person", "Usually", "11", "Poor", "-3", "Yes", "Usually", "Yes", "Yes", "Nearly every day", "Yes")
+worst <- rep(worst, each = 3)
+
+best_worst <- data.frame(activity, med_var, best, worst)
+
+means <- rep(0, 45)
+sds <- rep(0, 45)
+pval <- rep(0, 45)
+
+p_func <- function(activity, med_var, s1, s2) {
+  df <- data.frame(ma[[activity]], factor(x_compliant[[med_var]])) %>% na.omit
+  colnames(df) <- c("activity", "med_var")
+  df <- df %>% tibble() %>%
+    group_by(med_var) %>%
+    group_by(med_var) %>%
+    summarize(mean = mean(activity),
+              sd = sd(activity)/sqrt(length(activity)))
+  
+  xdiff = df$mean[df$med_var == s1] - df$mean[df$med_var == s2]
+  xsd = sqrt(df$sd[df$med_var == s1]^2 + df$sd[df$med_var == s2]^2)
+  pt = tibble(x = seq(-.1, .1, 0.001), 
+              y = dnorm(x, mean = xdiff, sd = xsd))
+  pval <- min(
+    round(pnorm(0, mean = xdiff, sd = xsd, lower.tail = FALSE), 4),
+    round(pnorm(0, mean = xdiff, sd = xsd), 4)
+  )
+  return (c(xdiff, xsd, pval))
+}
+
+for (i in 1:45) {
+  activity <- best_worst[i, 1]
+  med_var <- best_worst[i, 2]
+  s1 <- best_worst[i, 3]
+  s2 <- best_worst[i, 4]
+  res <- p_func(activity, med_var, s1, s2)
+  means[i] <- res[1]
+  sds[i] <- res[2]
+  pval[i] <- res[3]
+}
+
+best_worst <- cbind(best_worst, means) %>% cbind(sds) %>% cbind(pval)
+```
+
+According to Central Limit Theorem, mean of users' activity amount with medical condition ('best' or 'worst') approximates a normal distribution.  
+Thus the mean of activity amount difference between 'best' and 'worst' should also has a normal distribution.  
+p-value = minimal { p-value(mean difference > 0), p-value(mean difference < 0) }     
+If p-value << 0.5, the activity amount difference between 'best' and 'worst' is significant.  
+
+```{r}
+create_normal_trel <- FALSE
+if (create_normal_trel) {
+  normal_plot_func <- function(activity, med_var) {
+    i <- which(best_worst[, 1] == activity & best_worst[, 2] == med_var)
+    pt = tibble(x = seq(-.1, .1, 0.001), 
+                y = dnorm(x, mean = best_worst[i, "means"], sd = best_worst[i, "sds"]))
+    ggplot(pt, aes(x = x, y = y)) + geom_line() + xlab(best_worst[i, "med_var"]) +
+    geom_vline(xintercept = 0, linetype="dotted", color = "salmon", size=1) +
+    xlab("mean of ('best' - 'worst')") +
+    ylab("probability density") +
+    ggtitle(paste0("p-value = ", best_worst[i, "pval"])) +
+    theme(plot.title = element_text(hjust = 0.5))
+ }
+  best_worst <- best_worst %>% mutate(normal_plot = map2_plot(activity, med_var, normal_plot_func))
+  best_worst %>% trelliscope(name = "Normal distribution_mean_best_worst_diff", nrow = 1, ncol = 1,
+                             path = "assets/med_normal-trelliscope")
+}
+knitr::include_app("assets/med_normal-trelliscope/index.html")
+```
+

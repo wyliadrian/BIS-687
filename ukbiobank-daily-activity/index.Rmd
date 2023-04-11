@@ -1,0 +1,15 @@
+---
+title: "UKBiobank Daily Activity"
+description: |
+  Explore the relationship between Sleep Conditions and Daily Activity based on UKBiobank Dataset
+site: distill::distill_website
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# Learn more about creating websites with Distill at:
+# https://rstudio.github.io/distill/website.html
+
+```
+
