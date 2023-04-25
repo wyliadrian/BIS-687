@@ -88,29 +88,29 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
 
   <!--radix_placeholder_meta_tags-->
-  <title>BIS687 Capstone Team 4: Missingness</title>
+  <title>BIS687 Capstone Team 4: Prediction</title>
 
-  <meta property="description" itemprop="description" content="Missingness for all the variables"/>
+  <meta property="description" itemprop="description" content="Incorporating accelerometry data to predict sleeping conditions"/>
 
 
 
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
-  <meta property="og:title" content="BIS687 Capstone Team 4: Missingness"/>
+  <meta property="og:title" content="BIS687 Capstone Team 4: Prediction"/>
   <meta property="og:type" content="article"/>
-  <meta property="og:description" content="Missingness for all the variables"/>
+  <meta property="og:description" content="Incorporating accelerometry data to predict sleeping conditions"/>
   <meta property="og:locale" content="en_US"/>
   <meta property="og:site_name" content="BIS687 Capstone Team 4"/>
 
   <!--  https://dev.twitter.com/cards/types/summary -->
   <meta property="twitter:card" content="summary"/>
-  <meta property="twitter:title" content="BIS687 Capstone Team 4: Missingness"/>
-  <meta property="twitter:description" content="Missingness for all the variables"/>
+  <meta property="twitter:title" content="BIS687 Capstone Team 4: Prediction"/>
+  <meta property="twitter:description" content="Incorporating accelerometry data to predict sleeping conditions"/>
 
   <!--/radix_placeholder_meta_tags-->
   <!--radix_placeholder_rmarkdown_metadata-->
 
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description"]}},"value":[{"type":"character","attributes":{},"value":["Missingness"]},{"type":"character","attributes":{},"value":["Missingness for all the variables"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description"]}},"value":[{"type":"character","attributes":{},"value":["Prediction"]},{"type":"character","attributes":{},"value":["Incorporating accelerometry data to predict sleeping conditions"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   <!--radix_placeholder_navigation_in_header-->
@@ -2087,7 +2087,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Missingness","description":"Missingness for all the variables","authors":[]}
+{"title":"Prediction","description":"Incorporating accelerometry data to predict sleeping conditions","authors":[]}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2103,6 +2103,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <a href="missingness.html">Missingness</a>
 <a href="accelerometry.html">Accelerometry</a>
 <a href="clustering.html">Clustering</a>
+<a href="prediction.html">Prediction</a>
 <a href="javascript:void(0);" class="nav-toggle">&#9776;</a>
 </div>
 </nav>
@@ -2112,10 +2113,10 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <!--/radix_placeholder_site_before_body-->
 
 <div class="d-title">
-<h1>Missingness</h1>
+<h1>Prediction</h1>
 <!--radix_placeholder_categories-->
 <!--/radix_placeholder_categories-->
-<p><p>Missingness for all the variables</p></p>
+<p><p>Incorporating accelerometry data to predict sleeping conditions</p></p>
 </div>
 
 
@@ -2126,31 +2127,127 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
-<h1 id="na-count-and-percentage-by-field">NA count and percentage by field</h1>
 <div class="layout-chunk" data-layout="l-body">
-<iframe src="assets/missing-trelliscope/index.html?showcase=0" width="624" height="400px" data-external="1">
-</iframe>
+
 </div>
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
-<h1 id="na-count-by-category">NA count by category</h1>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="missingness_files/figure-html5/unnamed-chunk-5-1.png" width="624" /></p>
+
 </div>
-<h1 id="na-percentage-by-category">NA percentage by category</h1>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="missingness_files/figure-html5/unnamed-chunk-6-1.png" width="624" /></p>
+
 </div>
-<h1 id="baseline-na-count-by-category">Baseline NA count by category</h1>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="missingness_files/figure-html5/unnamed-chunk-7-1.png" width="624" /></p>
+
 </div>
-<h1 id="baseline-na-percentage-by-category">Baseline NA percentage by category</h1>
+<h2 id="predict-sleep-outcome-using-only-demographic-variables">Predict sleep outcome using only demographic variables</h2>
 <div class="layout-chunk" data-layout="l-body">
-<p><img src="missingness_files/figure-html5/unnamed-chunk-8-1.png" width="624" /></p>
+<pre><code>
+Call:
+ randomForest(formula = as.formula(paste(target, &quot;~&quot;, paste(predictors,      collapse = &quot; + &quot;))), data = train_data, ntree = 500, mtry = sqrt(length(predictors))) 
+               Type of random forest: classification
+                     Number of trees: 500
+No. of variables tried at each split: 2
+
+        OOB estimate of  error rate: 83.46%
+Confusion matrix:
+     1  2   3    4  5  6   7   8   9  11 16 class.error
+1   30 27  60  309 14 19  82 106  53 157 16   0.9656357
+2   26 14  41  198  9 21  56  80  45 162 19   0.9791356
+3   56 34  57  374  4 41 113 127  57 210 31   0.9483696
+4  107 63 137 1227 31 84 245 297 141 489 54   0.5732174
+5   28 12  10  129  3  9  35  42  20  82  9   0.9920844
+6   27 19  60  289  7 19  88  77  41 142 11   0.9756410
+7   56 43  93  521 16 37 144 154  61 272 29   0.8990182
+8   78 39  91  582 20 45 141 210  77 261 25   0.8661568
+9   52 28  51  389 14 31  77 129  54 187 21   0.9477251
+11  89 67 121  725 25 72 181 186  94 419 52   0.7936977
+16  22 18  38  172  4 16  39  57  19  94 12   0.9755601</code></pre>
 </div>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<div class="layout-chunk" data-layout="l-body">
+<pre><code>           
+predictions   1   2   3   4   5   6   7   8   9  11  16
+         1    6   9  13  35   1   6  13  15  10  18   4
+         2    7   5   8  18   2   5   7  13   5  14   1
+         3   14  13  16  38   2  19  23  17  17  31   3
+         4   76  55 103 315  47  88 169 149 108 159  48
+         5    5   1   1  11   1   3   4   4   5   5   1
+         6    2   6  10  15   2   2  11  14  11  13   3
+         7   18  12  21  48   9  13  30  42  28  43  13
+         8   28  23  21  78  13  22  43  51  20  53  12
+         9    9  13  13  29   3  12  10  17  10  33   5
+         11  41  35  46 122  23  39  57  60  56  94  27
+         16   4   2   7   9   0   3   8   8   5   9   3</code></pre>
+<pre><code>[1] &quot;Accuracy: 0.16&quot;</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<h2 id="predict-sleep-outcome-using-demographic-variables-accelerometry">Predict sleep outcome using demographic variables + accelerometry</h2>
+<div class="layout-chunk" data-layout="l-body">
+<pre><code>
+Call:
+ randomForest(formula = as.formula(paste(target, &quot;~&quot;, paste(a_predictors,      collapse = &quot; + &quot;))), data = a_train_data, ntree = 500, mtry = sqrt(length(predictors))) 
+               Type of random forest: classification
+                     Number of trees: 500
+No. of variables tried at each split: 2
+
+        OOB estimate of  error rate: 79.74%
+Confusion matrix:
+    1  2  3    4  5  6   7   8  9  11 16 class.error
+1  15  6 30  417  3 14  66 102 24 193  3   0.9828179
+2   7 20 27  283  2 12  51  64 15 187  3   0.9701937
+3  21 11 35  493  2 13  91 126 27 277  8   0.9682971
+4  39 28 74 1665 11 30 202 221 70 517 18   0.4208696
+5   3  4 13  178  0  3  20  39 14 103  2   1.0000000
+6  20  7 36  347  4 10  63  83 18 189  3   0.9871795
+7  24  5 62  668  3 23 137 136 36 328  4   0.9039271
+8  34 13 70  749  3 30 120 167 51 324  8   0.8935628
+9  20 14 42  517  2 14  59  98 17 246  4   0.9835431
+11 35 45 81  816  7 33 160 180 47 608 19   0.7006401
+16  8  8 23  206  0  9  24  49 11 146  7   0.9857434</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre><code>             
+a_predictions   1   2   3   4   5   6   7   8   9  11  16
+           1    3   5   4  11   1   2   6   3   4   9   2
+           2    5   1   1   4   2   2   2   6   2   8   3
+           3    6   5  13  20   0  11  11  14   8  20   2
+           4  100  75 118 416  50  88 189 187 140 215  50
+           5    0   2   0   2   0   1   1   2   1   2   1
+           6    4   0   4  18   1   1   7   7   3   2   1
+           7   18  12  16  41  14  22  26  30  13  45  10
+           8   23  20  29  45  12  21  41  46  26  31   6
+           9    7   4   5  14   4   8  12  11   1  11   5
+           11  42  49  67 144  19  54  78  82  74 129  39
+           16   2   1   2   3   0   2   2   2   3   0   1</code></pre>
+<pre><code>[1] &quot;Accuracy: 0.19&quot;</code></pre>
+</div>
+<h3 id="predictor-significance">Predictor significance</h3>
+<div class="layout-chunk" data-layout="l-body">
+<pre><code>      weight_f21002_0_0            low_activity 
+             2118.41411              2058.26818 
+           mid_activity           high_activity 
+             2051.46715              1946.05916 
+standing_height_f50_0_0   year_of_birth_f34_0_0 
+             1691.86763              1498.19034 
+            sex_f31_0_0 
+               92.05787 </code></pre>
+</div>
+<p>Incorporating activity scores calculated from accelerometry data can increase accuracy rate of our random forest model by 18.75%. Activity score variables turn out to show significance compared to other demographic variables. Based on our findings, we can infer that accelerometry data has the potential to serve as an additional tool for predicting sleep conditions.</p>
+<p>However, the accuracy rate is still low. This is because the independent variables (especially the activity scores) represent summary data, which may have resulted in the loss of significant information during the aggregation process.” This can be solved in the future by taking full advantage of raw accelerometry data (beyond our current scope).</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <!--radix_placeholder_article_footer-->
 <!--/radix_placeholder_article_footer-->
 </div>

@@ -13,4 +13,8 @@ navbar:
       href: missingness.html
     - text: "Accelerometry"
       href: accelerometry.html
+    - text: "Clustering"
+      href: clustering.html
+    - text: "Prediction"
+      href: prediction.html
 output: distill::distill_article

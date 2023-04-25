@@ -1,0 +1,140 @@
+---
+title: "Prediction"
+description: |
+  Incorporating accelerometry data to predict sleeping conditions
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+library(randomForest)
+```
+
+```{r}
+sleep_profile <- readRDS("data/sleep_profile.rds")
+df <- readRDS("data/ukbiobank.rds")
+```
+
+```{r}
+sleep_profile <- sleep_profile[sleep_profile$louvain %in% c(4, 6, 7, 3, 5, 2, 11, 8, 9, 1, 16), ]
+```
+
+```{r}
+var_name <- c("eid", "weight_f21002_0_0", "standing_height_f50_0_0", 
+              "year_of_birth_f34_0_0", "sex_f31_0_0")
+x_df <- df[, var_name] |>
+  na.omit() 
+
+x_df <- x_df[x_df$eid %in% sleep_profile$eid, ]
+```
+
+```{r}
+# Define a function to perform z-score standardization
+z_score_standardization <- function(x) {
+  return((x - mean(x)) / sd(x))
+}
+
+# Apply z-score standardization to specific columns in the data frame
+x_df$weight_f21002_0_0 <- z_score_standardization(x_df$weight_f21002_0_0)
+x_df$standing_height_f50_0_0 <- z_score_standardization(x_df$standing_height_f50_0_0)
+x_df$year_of_birth_f34_0_0 <- z_score_standardization(x_df$year_of_birth_f34_0_0)
+```
+
+```{r}
+new_df <- merge(sleep_profile, x_df, by = "eid", all = FALSE)
+new_df$louvain <- as.factor(new_df$louvain)
+new_df <- new_df |> na.omit()
+```
+
+```{r}
+set.seed(123)  # Set seed for reproducibility
+train_indices <- sample(1:nrow(x_df), nrow(new_df) * 0.8)  # Randomly select 80% of indices
+train_data <- new_df[train_indices, ]  # Subset train data
+test_data <- new_df[-train_indices, ]  # Subset test data
+```
+
+## Predict sleep outcome using only demographic variables
+```{r}
+# Specify the predictor variables and the target variable
+predictors <- c("weight_f21002_0_0", "standing_height_f50_0_0", 
+              "year_of_birth_f34_0_0", "sex_f31_0_0")
+target <- "louvain"
+
+# Train the Random Forest model
+rf_model1 <- randomForest(formula = as.formula(paste(target, "~", paste(predictors, collapse = " + "))),
+                         data = train_data, ntree = 500, mtry = sqrt(length(predictors)))
+
+# Print the summary of the trained model
+print(rf_model1)
+```
+
+```{r}
+# Make predictions on the test data
+predictions <- predict(rf_model1, newdata = test_data)
+
+# Evaluate the model performance
+confusion_matrix <- table(predictions, test_data$louvain)
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(confusion_matrix)
+print(paste("Accuracy:", round(accuracy, 2)))
+```
+
+```{r}
+accel_profile <- readRDS("data/accel_profile.rds")
+```
+
+```{r}
+a_df <- merge(new_df, accel_profile, by = "eid", all = FALSE)
+a_df$louvain <- as.factor(a_df$louvain)
+a_df <- a_df |> na.omit()
+```
+
+```{r}
+a_df$low_activity <- z_score_standardization(a_df$low_activity)
+a_df$mid_activity <- z_score_standardization(a_df$mid_activity)
+a_df$high_activity <- z_score_standardization(a_df$high_activity)
+```
+
+```{r}
+a_train_data <- a_df[train_indices, ]  # Subset train data
+a_test_data <- a_df[-train_indices, ]  # Subset test data
+```
+
+## Predict sleep outcome using demographic variables + accelerometry
+```{r}
+# Specify the predictor variables and the target variable
+a_predictors <- c("weight_f21002_0_0", "standing_height_f50_0_0", 
+              "year_of_birth_f34_0_0", "sex_f31_0_0", "low_activity", 
+              "mid_activity", "high_activity")
+
+# Train the Random Forest model
+rf_model2 <- randomForest(formula = as.formula(paste(target, "~", paste(a_predictors, collapse = " + "))),
+                         data = a_train_data, ntree = 500, mtry = sqrt(length(predictors)))
+
+# Print the summary of the trained model
+print(rf_model2)
+```
+
+```{r}
+# Make predictions on the test data
+a_predictions <- predict(rf_model2, newdata = a_test_data)
+
+# Evaluate the model performance
+confusion_matrix <- table(a_predictions, a_test_data$louvain)
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+print(confusion_matrix)
+print(paste("Accuracy:", round(accuracy, 2)))
+```
+
+### Predictor significance
+```{r}
+var_importance <- importance(rf_model2)
+var_importance_sorted <- var_importance[order(var_importance, decreasing = TRUE),]
+print(var_importance_sorted)
+```
+
+Incorporating activity scores calculated from accelerometry data can increase accuracy rate of our random forest model by 18.75%. Activity score variables turn out to show significance compared to other demographic variables. Based on our findings, we can infer that accelerometry data has the potential to serve as an additional tool for predicting sleep conditions.
+
+However, the accuracy rate is still low. This is because the independent variables (especially the activity scores) represent summary data, which may have resulted in the loss of significant information during the aggregation process." This can be solved in the future by taking full advantage of raw accelerometry data (beyond our current scope).
